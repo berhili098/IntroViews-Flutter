@@ -15,6 +15,7 @@ class AnimatedPageDragger {
     required double slidePercent,
     required StreamController<SlideUpdate> slideUpdateStream,
     required TickerProvider vsync,
+    this.autoSlideDuration = const Duration(seconds: 3),
   }) {
     final startSlidePercent = slidePercent;
     double endSlidePercent;
@@ -56,6 +57,11 @@ class AnimatedPageDragger {
           // Adding to slide update stream
           slideUpdateStream.add(SlideUpdate(
               slideDirection, slidePercent, UpdateType.doneAnimating));
+
+          // Start auto-slide timer after animation completes
+          if (_autoSlideEnabled) {
+            _startAutoSlideTimer();
+          }
         }
       });
   }
@@ -68,13 +74,40 @@ class AnimatedPageDragger {
   /// Animation controller.
   late AnimationController completionAnimationController;
 
+  final Duration autoSlideDuration;
+
+  // Add new fields for auto-slide functionality
+  Timer? _autoSlideTimer;
+  bool _autoSlideEnabled = false;
+
   /// This method is used to run animation controller.
   void run() {
     completionAnimationController.forward(from: 0.0);
   }
 
+  // Add new methods for auto-slide control
+  void startAutoSlide() {
+    _autoSlideEnabled = true;
+    _startAutoSlideTimer();
+  }
+
+  void stopAutoSlide() {
+    _autoSlideEnabled = false;
+    _autoSlideTimer?.cancel();
+  }
+
+  void _startAutoSlideTimer() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = Timer(autoSlideDuration, () {
+      if (_autoSlideEnabled) {
+        run();
+      }
+    });
+  }
+
   /// This method is used to dispose animation controller.
   void dispose() {
+    _autoSlideTimer?.cancel();
     completionAnimationController.dispose();
   }
 }
